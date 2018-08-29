@@ -5,10 +5,10 @@ Developer: Pierre Castori
 Created: 05.2018
 Version: 
 
-Description: 
+Description: Kanban page. Based on https://developer.salesforce.com/forums/?id=9060G000000I1eGQAS
 
 Modifications:
-28.08.2018 [PC] Added support of PRoduct backlogs (Requirement__c)
+28.08.2018 [PC] Added support of Product backlogs (Requirement__c)
 
 -->
 <apex:page controller="nx_WorkController"
