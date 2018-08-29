@@ -308,12 +308,12 @@ public without sharing class nx_WorkController
     		else if (this.getIsPBL())
     		{
     			result =	'/a00/e?' + // retURL=%2F' + this.Id + '&cancelURL=%2F' + this.Id +
-    						'CF00N20000003ZO4R=' + this.pbl.Workspace__r.Name +
-    						'&CF00N20000003ZO4R_lkid=' + this.pbl.Workspace__r.Id +
-    						'&CF00N20000000i5Nx=' + this.pbl.Workspace__r.Contract__r.ContractNumber +
-    						'&CF00N20000000i5Nx_lkid=' + this.pbl.Workspace__r.Contract__r.Id +
-    						'&CF00N20000000i5Fs=' + this.pbl.Workspace__r.Account__r.Name +
-    						'&CF00N20000000i5Fs_lkid=' + this.pbl.Workspace__r.Account__r.Id +
+    						'CF00N20000003ZO4R=' + this.pbl.Feature__r.Workspace__r.Name +
+    						'&CF00N20000003ZO4R_lkid=' + this.pbl.Feature__r.Workspace__r.Id +
+    						'&CF00N20000000i5Nx=' + this.pbl.Feature__r.Workspace__r.Contract__r.ContractNumber +
+    						'&CF00N20000000i5Nx_lkid=' + this.pbl.Feature__r.Workspace__r.Contract__r.Id +
+    						'&CF00N20000000i5Fs=' + this.pbl.Feature__r.Workspace__r.Account__r.Name +
+    						'&CF00N20000000i5Fs_lkid=' + this.pbl.Feature__r.Workspace__r.Account__r.Id +
     						'&CF00N20000003ZO4Q=' + this.pbl.Name +
     						'&CF00N20000003ZO4Q_lkid=' + this.Id +
     						'&Name=' + this.pbl.Name;
@@ -417,9 +417,9 @@ public without sharing class nx_WorkController
     	}
     	
     	// Processing for PBL
-    	for (Requirement__c pbl : [SELECT Id, Name, Workspace__r.Account__r.Name, Workspace__r.Account__r.Id, Workspace__r.Account__c,
-    									  Status__c, User_Story_Priority__c, Comments__c, Workspace__r.Name, Workspace__r.Id,
-    									  Workspace__r.Contract__r.ContractNumber, Workspace__r.Contract__r.Id,
+    	for (Requirement__c pbl : [SELECT Id, Name, Feature__r.Workspace__r.Account__r.Name, Feature__r.Workspace__r.Account__r.Id, Feature__r.Workspace__r.Account__c,
+    									  Status__c, User_Story_Priority__c, Comments__c, Feature__r.Workspace__r.Name, Feature__r.Workspace__r.Id,
+    									  Feature__r.Workspace__r.Contract__r.ContractNumber, Feature__r.Workspace__r.Contract__r.Id,
     									  Requirement_Title__c, As_a__c, I_want_to__c, So_that__c,
     									  CreatedDate, CreatedBy.Name, LastModifiedDate, LastModifiedBy.Name
     							   FROM Requirement__c
@@ -432,7 +432,7 @@ public without sharing class nx_WorkController
         	// Skip pbls with no status (not normal)
         	if (wi.status == null) continue;
         	allWorkItemsMap.get(wi.status).add(wi);
-        	workItemsAccountIds.add(pbl.Workspace__r.Account__c);
+        	workItemsAccountIds.add(pbl.Feature__r.Workspace__r.Account__c);
     	}
     	
     	// Get the credentials and store them into the work item
@@ -543,8 +543,8 @@ public without sharing class nx_WorkController
     {
     	wi.pbl = pbl;
     	wi.id = pbl.Id;
-    	wi.account_name = pbl.Workspace__r.Account__r.Name;
-    	wi.account_id = pbl.Workspace__r.Account__c;
+    	wi.account_name = pbl.Feature__r.Workspace__r.Account__r.Name;
+    	wi.account_id = pbl.Feature__r.Workspace__r.Account__c;
     	// Rule for priority: 13/1 = 13 is highest, 1/13 is smallest.
     	if (pbl.User_Story_Priority__c >= 8)
     	{
