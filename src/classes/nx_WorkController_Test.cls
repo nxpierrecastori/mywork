@@ -49,7 +49,6 @@ private class nx_WorkController_Test {
         	Status__c = 'Not Started',
         	User_Story_Effort__c = '2',
         	User_Story_Value__c = '8',
-        	Workspace__c = ws.Id,
         	Feature__c = testFeature.Id
         );
         insert pbl;
