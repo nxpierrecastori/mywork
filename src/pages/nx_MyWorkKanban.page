@@ -1,0 +1,593 @@
+<!-- 
+(c) 2018 Nexell GmbH
+Developed by NEXELL GmbH, Zug (Switzerland)
+Developer: Pierre Castori
+Created: 05.2018
+Version: 
+
+Description: 
+
+Modifications:
+28.08.2018 [PC] Added support of PRoduct backlogs (Requirement__c)
+
+-->
+<apex:page controller="nx_WorkController"
+           standardStylesheets="true"
+           showHeader="true"
+           sidebar="false"
+           applyHtmlTag="true"
+           applyBodyTag="false"
+           docType="html-5.0"
+           title="My Work (Kanban)"
+           lightningStylesheets="true">
+    
+
+   <!--      <head>
+            <meta charset="utf-8" />
+            <meta http-equiv="x-ua-compatible" content="ie=edge" />
+            <meta name="viewport" content="width=device-width, initial-scale=1" />
+ -->
+            <!--link type="text/css" href="https://www.lightningdesignsystem.com/assets/styles/slds.css" rel="stylesheet" /-->
+            <link type="text/css" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.6.3/css/font-awesome.min.css" rel="stylesheet" />
+            <link type="text/css" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/css/toastr.min.css" rel="stylesheet" />
+            
+            <style type="text/css">
+                .slds-item {
+                    box-shadow: 0 0 10px gray;
+                    border: none !important;
+                    background-color: #fff;
+                    border-radius: 0 !important;
+                    border-left: 5px solid #56aadf !important;
+                }
+                .slds-item-selected {
+                    background-color: lightgray;
+                }
+                .slds-item ul, .slds-popover__body ul {
+                	list-style:disc;
+                }
+                .slds-item ul, .slds-popover__body ul {
+                	margin-left: 1.5rem;
+                }
+                .slds-title {
+                    border-radius: 3px;
+                    background-color: #e0e5ee;
+                    border: 1px solid #d8dde6;
+                    cursor: move;
+                }
+                .slds-col {
+                    min-height: 520px;
+                    overflow-y: auto;
+                    border-left: 1px solid whitesmoke;
+                }
+                .slds-col-header {
+                    min-height: 10px;
+                    overflow-y: hidden;
+                }
+                .slds-item-placeholder {
+                    border: 2px dotted gray !important;
+                    height: 5rem;
+                }
+                .slds-col-unassigned {
+
+                }
+                .slds-col-done {
+					opacity:0.5;
+                }
+                .slds-short-menu-option {
+                	margin-top:5px;
+                }
+                .slds-short-menu-button {
+                	cursor:pointer;
+                	display:inline;
+                	padding-right:5px;
+                	opacity:0.5;
+                }
+                .slds-short-menu-button:hover{
+                	opacity:1;
+                }
+                .moving-card {
+                    opacity: 0.5;
+                    transform: rotate( -5deg );
+                }
+            </style>
+            <apex:slds />
+       <!--  </head> -->
+        <body>
+
+        <!-- --------------------------------------------------------------------------- -->
+        <!-- ------------------------ CONFIGURATION VARIABLES -------------------------- -->
+        <!-- --------------------------------------------------------------------------- -->
+        <!-- Return page after user actions (i.e. this current page) -->
+        <apex:variable var="theReturnURL"
+                       value="{!URLENCODE(URLFOR($Page.nx_MyWorkKanban,null,[userid=currentUser.id],false))}" />
+                       
+        <!-- --------------------------------------------------------------------------- -->
+        <!-- ------------------- LANGUAGE DEPENDANT TEXT VARIABLES --------------------- -->
+        <!------------------------------------------------------------------------------ -->
+        
+        <!-- --------------------------------------------------------------------------- -->
+        <!-- --------------------------- START OF PAGE CODE ---------------------------- -->
+        <!------------------------------------------------------------------------------ -->
+
+        <div class="slds-scope" id="idContainer">
+        
+            <!--Page Header-->
+            <!-- 
+            <div class="slds-page-header slds-m-bottom--small" role="banner">
+                <div class="slds-media slds-media--center">
+                    <div class="slds-media__body">
+                        <p class="slds-page-header__title slds-truncate slds-align-middle slds-text-heading--large">
+                            <strong>
+                            	<img src="" style="height:40px" aria-hidden="true"/>&nbsp;My Work (Kanban)
+                            </strong>
+                            
+                            <span class="slds-text-body--small page-header__info">v 1.03</span>
+                            <span class="slds-text-body page-header__info">{!currentUser.FirstName} {!currentUser.LastName}</span>
+                        </p>
+                    </div>
+					
+                    <div>
+                    	Show:
+                    	<select onchange="filterDisplay($(this).val());">
+                    		<option value="all">all</option>
+                    		<option value="Case">cases only</option>
+                    		<option value="PT">project tasks only</option>
+                    		<option value="PBL">product backlogs only</option>
+                    	</select>
+                    </div>
+                </div>
+
+            </div>
+             -->
+            
+			<div class="slds-page-header slds-m-bottom--small slds-grid slds-grid_vertical-align-center">
+			  <div class="slds-col slds-col-header">
+			     <p class="slds-page-header__title slds-truncate slds-align-middle slds-text-heading--large">
+			         <strong>
+			         <img src="" aria-hidden="true"/>&nbsp;My Work (Kanban)
+			         </strong>
+			         
+			         <span class="slds-text-body--small page-header__info">v 1.05</span>
+			     </p>
+			  </div>
+			  <div class="slds-col slds-col-header">
+				<div class="slds-text-body page-header__info slds-text-heading--large">
+					{!currentUser.FirstName} {!currentUser.LastName}
+					<!-- 
+                   	<select onchange="window.open('{!URLFOR($Page.nx_MyWorkKanban,null,null,false)}?userId=' + $(this).val(),'_self');" style="height:auto;" id="idUserSelect">
+                   		<apex:repeat value="{!Users}" var="user">
+                   			<option value="{!user.Id}">{!user.Name}</option>
+						</apex:repeat>
+                   	</select>
+                   	 -->
+				</div>
+			  </div>
+			  <div class="slds-col slds-col-header slds-align-center" style="text-align:right;">
+				  <span class="slds-text-body page-header__info">
+	                   	Show:
+	                   	<select onchange="filterDisplay($(this).val());">
+	                   		<option value="all">all</option>
+	                   		<option value="Case">cases only</option>
+	                   		<option value="PT">project tasks only</option>
+	                   		<option value="PBL">product backlogs only</option>
+	                   	</select>
+				  </span>
+			  </div>
+			</div>
+            
+            <!--Kanban Column Headers-->
+            <div class="slds-grid">
+                <div class="slds-tabs--path" role="application">
+                    <ul class="slds-tabs--path__nav" role="tablist">
+                    
+                        <apex:repeat value="{!WorkItemStateKeys}" var="workItemState">
+                            <li class="slds-tabs--path__item slds-is-incomplete" role="presentation">
+                                <a class="slds-tabs--path__link" tabindex="-1" role="tab" href="javascript:void(0);">
+                                    <div class="slds-tabs--path__title slds-text-heading--medium" style="font-style:{!IF(workItemState == 'Unassigned','italic','normal')};">
+                                    	{!WorkItemStates[workItemState].label}
+                                    
+		                                <span class="slds-short-menu-button fa fa-question-circle fa-xs"
+		                                	 onmouseover="SetDivAtMouse('help{!workItemState}', event);"
+		                                	 onmouseout="$('#help{!workItemState}').hide();">
+		                                </span>
+                                	</div>
+                                </a>
+                            </li>
+                        </apex:repeat>
+                        
+                    </ul>
+                </div>
+            </div>
+            
+            <!--Kanban Columns-->
+            <div class="slds-grid">
+            
+                <apex:repeat value="{!WorkItemStateKeys}" var="workItemState">
+                
+                    <div class="slds-col slds-size--1-of-{!WorkItemStateKeys.size} slds-has-dividers--around-space slds-scrollable--y slds-col-{!LOWER(workItemState)}" name="{!workItemState}">
+                    
+                        <apex:repeat value="{!allWorkItemsMap[workItemState]}" var="workItem">
+
+                            <!-- WorkItem Kanban element -->
+                            <div class="slds-item slds-m-around--small slds-item-{!workItem.Role}"
+                            	 id="{!workItem.Id}"
+                            	 onclick="SelectWorkItem('#{!workItem.Id}');"
+                            	 role="{!workItem.Role}"
+                            	 style="position:relative;border-left-color:{!CASE(LOWER(workItem.Priority), 'high', 'red', 'medium', 'orange', 'low', 'green', '#56aadf')} !important;">
+                            	 
+                                <div class="slds-tile slds-tile--board">
+                                
+                                   <!--  Display of workitem title -->
+                                   <h3 class="slds-section-title--divider slds-title slds-m-bottom--xx-small" style="padding-left:0.5rem; padding-right:0.5rem;">
+	                                   <table>
+		                                    <tr>
+		                                    <td style="vertical-align:middle;text-align:center;width:10%;">
+		                                        <div style="display:inline;{!IF(workItemState == 'Done','opacity:0.5;','')}" class="fa fa-{!workItem.Icon} fa-fw" aria-hidden="true"/>&nbsp;
+		                                    </td>
+		                                    <td style="vertical-align:middle;text-align:left;">
+		                                        <a href="/{!workItem.Id}" target="_blank" style="{!IF(workItemState == 'Done','color:gray;','')}">
+		                                            {!workItem.Name}
+		                                        </a>
+		                                    </td>
+		                                    </tr>
+	                                  	</table>
+                                   </h3>
+                                   
+                                   <!-- Display of related account -->
+                                   <p class="slds-truncate slds-text-body--small" style="text-align:center;">
+                                   		<a style="color:gray;" href="/{!workItem.account_id}" target="_blank">{!workItem.account_name}</a>
+                                   </p>
+                                   
+                                   <!--  Menu buttons -->
+                                   <div class="slds-tile__detail slds-text-body--small slds-m-top--xx-small ">
+                                       
+                                       <div class="slds-short-menu-button fa fa-tachometer fa-fw fa-sm"
+                                       	 onmouseover="HoverMenuButton('#idStatus{!workItem.Id}');"
+                                       	 onmouseout="LeaveMenuButton();">
+                                       </div>
+                                       <div class="slds-short-menu-button fa fa-info-circle fa-fw fa-sm"
+                                       	 onmouseover="HoverMenuButton('#idDetail{!workItem.Id}');"
+                                       	 onmouseout="LeaveMenuButton();">
+                                       </div>
+                                       <div class="slds-short-menu-button fa fa-comment fa-fw fa-sm"
+                                       	 style="{!IF(workItem.HasNewComments,'color:red;','')}"
+                                       	 onmouseover="HoverMenuButton('#idComment{!workItem.Id}');"
+                                       	 onmouseout="LeaveMenuButton();">
+                                       </div>
+                                       <div class="slds-short-menu-button fa fa-unlock-alt fa-fw fa-sm"
+                                       	 onmouseover="HoverMenuButton('#idCredential{!workItem.Id}');"
+                                       	 onmouseout="LeaveMenuButton();">
+                                       </div>
+                                       <div class="slds-short-menu-button fa fa-clock-o fa-fw fa-sm"
+                                       	 onmouseover="HoverMenuButton('#idTT{!workItem.Id}');"
+                                       	 onmouseout="LeaveMenuButton();">
+                                       </div>
+                                       
+                                   </div>
+                                
+                                   <!--  Menu option dropdowns -->
+	                               <div>
+		                               <div style="display:none;"
+		                                  	class="slds-tile__detail slds-text-body--small slds-short-menu-option"
+		                                  	id="idStatus{!workItem.Id}">
+		                               		<div class="slds-m-bottom--x-small">
+		                               			<span class="fa fa-hand-o-right fa-xs"/>
+		                                     	<a href="/{!workItem.account_id}" target="_blank">{!workItem.account_name}</a>
+		                                     	{!workItem.ContactName}
+		                               		</div>
+		                              	    <div class="slds-m-bottom--x-small" style="text-align:center;background-color:lightgray;">
+		                              	    	{!workItem.SfStatus}
+		                              	    </div>
+		                               		<div>
+			                              	    <p style="font-weight:bold;">
+			                              	    	Created
+			                              	    </p>
+			                              	    <p style="font-weight:normal;">
+			                              	    	{!workItem.CreatedOrigin}
+			                              	    </p>
+		                              	    </div>
+		                               		<div>
+			                              	    <p style="font-weight:bold;">
+			                              	    	Last Modified
+			                              	    </p>
+			                              	    <p style="font-weight:normal;">
+			                              	    	{!workItem.ModifiedOrigin}
+			                              	    </p>
+		                              	    </div>
+		                               </div>
+		                               <div style="display:none;"
+		                               	 	class="slds-tile__detail slds-text-body--small slds-short-menu-option"
+		                               	 	id="idDetail{!workItem.Id}">
+		                              		<p>
+		                                   		<apex:outputText value="{!workItem.Details}" escape="false"/>
+		                               		</p>
+		                               </div>
+		                               <div style="display:none;"
+		                               		class="slds-tile__detail slds-text-body--small slds-short-menu-option"
+		                               		id="idComment{!workItem.Id}">
+		                               		
+		                               		<!--  New Comment link -->
+		                               		<apex:outputPanel styleClass="slds-m-bottom--x-small"
+		                               						  layout="block"
+		                               						  rendered="{!workItem.IsCase}">
+		                               			<span class="fa fa-hand-o-right fa-xs"/>
+			                               		<apex:outputLink value="/00a/e?parent_id={!workItem.Id}&retURL={!theReturnURL}"
+			                               						 target="_self">
+			                               			New Comment
+			                               		</apex:outputLink>
+		                               		</apex:outputPanel>
+		                               		
+		                               		<!-- Display of latest comment -->
+		                              	    <p style="font-weight:bold;">
+		                              	    	{!workItem.LatestCommentOrigin}
+		                              	    </p>
+		                              	    <p>
+		                              	    	<apex:outputText value="{!workItem.LatestCommentText}" escape="false"/>
+		                                    </p>
+		                               </div>
+		                               <div style="display:none;" class="slds-tile__detail slds-text-body--small slds-short-menu-option" id="idCredential{!workItem.Id}">
+		                              	    <p>
+		                                   	<apex:repeat value="{!workItem.Credentials}" var="credential">
+		                                   		<span class="fa fa-hand-o-right fa-xs"/>
+		                                   		<a href="{!credential.Login_Url__c}" target="_blank">{!credential.Name}</a><br/>
+		                                   	</apex:repeat>
+		                                   </p>
+		                               </div>
+		                               <div style="display:none;"
+		                               	 	class="slds-tile__detail slds-text-body--small slds-short-menu-option"
+		                               	 	id="idTT{!workItem.Id}">
+		                               	 	<div class="slds-m-bottom--x-small">
+			                              		<p>
+			                              			<span class="fa fa-hand-o-right fa-xs"/>
+			                                   		<a href="{!workItem.NewTimeTrackLink}&retURL={!theReturnURL}" target="_self">New Time Track</a>
+			                               		</p>
+		                               		</div>
+		                               </div>
+
+	                               </div>
+                             
+                             	</div>
+                             
+                            </div>
+
+                        </apex:repeat>
+                        
+                    </div>
+                    
+                </apex:repeat>
+                
+            </div>
+      
+      		<!--  Select lists for pop-ups showing when moving workitems to new columns (not all are used) -->
+            <apex:form> 
+	            <apex:repeat value="{!WorkItemStateKeys}" var="workItemState">
+				    <div id="idCaseSelectDiv{!workItemState}"
+				    	 class="slds-box slds-box_x-small slds-theme_warning status-selector"
+				    	 style="display: none; font-size: 90%; z-index: 10000; position:absolute; background-color:#219BC2;">
+				        <apex:selectlist multiselect="false" size="1" onchange="updateWorkItem(workItemId, workItemStatus, $(this).val());" >
+				        	<apex:selectoption itemValue="--" itemLabel="-- Please select a status --" itemDisabled="true"/>
+				            <apex:selectoptions value="{!WorkItemStates[workItemState].CaseSelectOptions}" />
+				            <apex:selectoption itemValue="-cancel-" itemLabel="Cancel" itemDisabled="false"/>
+				        </apex:selectlist>
+			    	</div>
+				    <div id="idPTSelectDiv{!workItemState}"
+				    	 class="slds-box slds-box_x-small slds-theme_warning status-selector"
+				    	 style="display: none; font-size: 90%; z-index: 10000; position:absolute; background-color:#219BC2;">
+				        <apex:selectlist multiselect="false" size="1" onchange="updateWorkItem(workItemId, workItemStatus, $(this).val());" >
+				        	<apex:selectoption itemValue="--" itemLabel="-- Please select a stage --" itemDisabled="true"/>
+				            <apex:selectoptions value="{!WorkItemStates[workItemState].PTSelectOptions}"/>
+				            <apex:selectoption itemValue="-cancel-" itemLabel="Cancel" itemDisabled="false"/>
+				        </apex:selectlist>
+			    	</div>
+				    <div id="idPBLSelectDiv{!workItemState}"
+				    	 class="slds-box slds-box_x-small slds-theme_warning status-selector"
+				    	 style="display: none; font-size: 90%; z-index: 10000; position:absolute; background-color:#219BC2;">
+				        <apex:selectlist multiselect="false" size="1" onchange="updateWorkItem(workItemId, workItemStatus, $(this).val());" >
+				        	<apex:selectoption itemValue="--" itemLabel="-- Please select a status --" itemDisabled="true"/>
+				            <apex:selectoptions value="{!WorkItemStates[workItemState].PBLSelectOptions}"/>
+				            <apex:selectoption itemValue="-cancel-" itemLabel="Cancel" itemDisabled="false"/>
+				        </apex:selectlist>
+			    	</div>
+			    	
+			    	<!--  Help Text for Statuses -->
+					<div class="slds-popover slds-popover--tooltip slds-nubbin--left-top toggle"
+							    role="tooltip"
+							    id="help{!workItemState}"
+							    style="position:absolute;top:-4px;left:20px;display:none;" aura:id="tooltip">
+					   <div class="slds-popover__body">
+					   	<apex:outputText value="{!WorkItemStates[workItemState].HelpHtmlText}" escape="false"/>
+					   </div>
+					</div>  
+
+			    </apex:repeat>
+		    </apex:form>
+		        
+	              
+        </div>
+
+
+        <script type="text/javascript" src="https://code.jquery.com/jquery-1.12.4.js"></script>
+        <script type="text/javascript" src="https://code.jquery.com/ui/1.12.0/jquery-ui.js"></script>
+        <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/js/toastr.min.js"></script>
+        <script type="text/javascript">
+        
+        	function filterDisplay(what)
+        	{
+        		if (what == 'all')
+        		{
+        			showAllWorkItems()
+        		}
+        		else
+        		{
+        			hideAllWorkItems();
+        			showWorkItem(what);
+        		}
+        	}
+        
+        	function showWorkItem(what)
+        	{
+        		$('.slds-item-'+what).show('fast');
+        	}
+        	
+        	function hideWorkItem(what)
+        	{
+        		$('.slds-item-'+what).hide('fast','linear');
+        	}
+        	
+        	function showAllWorkItems()
+        	{
+        		showWorkItem('Case');
+        		showWorkItem('PT');
+        		showWorkItem('PBL');
+        	}
+        	
+        	function hideAllWorkItems()
+        	{
+         		hideWorkItem('Case');
+        		hideWorkItem('PT');
+        		hideWorkItem('PBL');
+        	}
+        	
+        	var menuOpenTimeout;
+        
+        	function HideAllMenus()
+        	{
+        		// Hide the workitems drop downs
+        		$('.slds-short-menu-option').stop(true,true).slideUp(100,'linear');
+        		
+				// Hide the status select menu
+            	//$('.status-selector').hide();
+        	}
+        	
+        	function HoverMenuButton(menuId)
+        	{
+        		menuOpenTimeout = setTimeout(function(){
+        								HideAllMenus();
+        								$(menuId).stop(true,true).slideDown(200,'linear');
+        							 }, 300);
+        	}
+        	
+        	function LeaveMenuButton()
+        	{
+        		clearTimeout(menuOpenTimeout);
+        	}
+        	
+        	function ClearWorkItemSelections()
+        	{
+        		$( ".slds-item" ).removeClass('slds-item-selected');
+        	}
+        	
+        	function SelectWorkItem(workItemId)
+        	{
+        		ClearWorkItemSelections();
+        		$(workItemId).addClass('slds-item-selected');
+        	}
+        	
+			function SetDivAtMouse(divId, e){
+				//var e = window.event || e; 
+			
+			    var left  = e.pageX + "px";
+			    var top  = e.clientY + "px";
+			
+			    var div = document.getElementById(divId);
+			    div.style.left = left;
+			    div.style.top = top;
+			    $('#'+divId).toggle();
+			}
+			
+        	var workItemStatusBefore;
+        	var workItemStatus;
+        	var workItemId;
+        	var workItemType;
+        	
+            $( ".slds-col" ).sortable(
+                {
+                    connectWith: ".slds-col",
+                    handle: ".slds-title",
+                    placeholder: "slds-item slds-m-around--small slds-item-placeholder",
+                    start: function( event, ui ) {
+                        $( ui.item ).addClass( "moving-card" );
+                        workItemStatusBefore = $( ui.item ).parent().attr( "name" );
+                        $('.status-selector').hide();
+                        $('.status-selector select').prop('selectedIndex',0);
+                    },
+                    stop: function( event, ui ) {
+                        $( ui.item ).removeClass( "moving-card" );
+
+                        workItemId       = $( ui.item ).attr( "id" );
+                        workItemStatus   = $( ui.item ).parent().attr( "name" );
+                        workItemType 	 = $( ui.item ).attr( "role" );
+
+						if (workItemStatusBefore != workItemStatus)
+						{
+							if (workItemStatus == 'ToDo' || workItemStatus == 'Waiting')  // must be identical to configuration in workItemStatus2xxx functions
+							{
+								// User selection required
+								SetDivAtMouse('id' + workItemType + 'SelectDiv' + workItemStatus, event);
+							}
+							else
+							{
+							
+								// No user selection take default values
+	                        	updateWorkItem( workItemId, workItemStatus, null );
+	                        }
+                        }
+                    }
+                }
+            );
+            
+            function updateWorkItem(workItemId, workItemStatus, sfItemStatus)
+            {
+            	// First hide the status select menu and reset selection
+            	$('.status-selector').hide();
+            	$('.status-selector select').prop('selectedIndex',0);
+            	
+            	// Check if move cancelled
+            	if ( (sfItemStatus != '--') && (sfItemStatus != '-cancel-') )
+            	{
+            		// Call Salesforce function to update status
+	   	            nx_WorkController.updateWorkItemAfterMove(
+	                    workItemId,
+	                    workItemStatus,
+	                    sfItemStatus,
+	                    function( result, event ) {
+	                        if( result && result.isSuccess ) {
+	                            toastr.success( result.message );
+	                        }
+	                        else if( !result )
+	                        {
+	                        	toastr.error( "Unknown error!" );
+	                        }
+	                        else
+	                        {
+	                        	toastr.error( result.message );
+	                        }
+	                    }
+	                );
+                }
+                else
+                {
+                	// Cancelled so put back in place
+                	$('#'+workItemId).prependTo($('[name='+workItemStatusBefore+']'));
+                	toastr.warning( 'Move operation cancelled' );
+                }
+            }
+            
+            
+        // Catch click to clear open menus if displayed
+    	$('#idContainer').on('click', function(evt) {
+    		evt.stopPropagation();
+        	HideAllMenus();
+    	});
+    	
+    	// Make special cancel option visible and different
+    	$('.status-selector select option[value="-cancel-"]').css('font-style','italic').css('font-weight','bold');
+    	
+    	
+    	//
+    	$("#idUserSelect").val("{!currentUSer.Id}");
+        </script>
+
+        </body>
+
+</apex:page>
